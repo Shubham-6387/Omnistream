@@ -52,6 +52,38 @@ export function ScreenShareIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+export function ChatIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M7 7h10" />
+      <path d="M7 11h6" />
+      <path d="M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 4V6a2 2 0 0 1 2-2Z" />
+    </BaseIcon>
+  )
+}
+
+export function MaximizeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 9V5h4" />
+      <path d="M20 15v4h-4" />
+      <path d="m4 20 6-6" />
+      <path d="m20 4-6 6" />
+    </BaseIcon>
+  )
+}
+
+export function MinimizeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 15h4v4" />
+      <path d="M20 9h-4V5" />
+      <path d="m4 20 6-6" />
+      <path d="m20 4-6 6" />
+    </BaseIcon>
+  )
+}
+
 export function UploadIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <BaseIcon {...props}>

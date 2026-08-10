@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import {
   LayoutContextProvider,
   LiveKitRoom,
@@ -23,7 +23,7 @@ import { isEqualTrackRef, isTrackReference, type TrackReferenceOrPlaceholder } f
 import { ConnectionQuality, RoomEvent, Track, type Participant } from 'livekit-client'
 import { RoomFile } from '../lib/api'
 import { DropZone } from './DropZone'
-import { Badge, Button, Card, CheckIcon, CopyIcon, MoreIcon, QrIcon, RecordingIcon, ScreenShareIcon, SignalIcon, SparkIcon, UsersIcon, VideoCameraIcon } from './ui'
+import { Badge, Button, Card, CheckIcon, ChatIcon, CopyIcon, Input, MaximizeIcon, MinimizeIcon, MoreIcon, QrIcon, RecordingIcon, ScreenShareIcon, SignalIcon, SparkIcon, UsersIcon, VideoCameraIcon } from './ui'
 import { FileList } from './FileList'
 
 interface VideoPanelProps {
@@ -180,6 +180,22 @@ function RoomStage({
   const connectionState = useConnectionState()
   const { name } = useRoomInfo()
   const { localParticipant } = useLocalParticipant()
+  const [showChat, setShowChat] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [draftMessage, setDraftMessage] = useState('')
+  const [chatMessages, setChatMessages] = useState([
+    { id: 'welcome', author: 'System', text: 'Chat is ready for this room.' },
+  ])
+  const stageRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
 
   useEffect(() => {
     if (screenShareTracks.some((track) => track.publication.isSubscribed) && lastAutoFocusedScreenShareTrack.current === null) {
@@ -197,16 +213,44 @@ function RoomStage({
   const activeSpeakerNames = speakingParticipants.slice(0, 3).map((participant) => participant.name || participant.identity)
   const hasScreenShare = screenShareTracks.some((track) => track.publication.isSubscribed)
 
+  const toggleFullscreen = async () => {
+    if (!stageRef.current) return
+
+    if (document.fullscreenElement) {
+      await document.exitFullscreen()
+      return
+    }
+
+    await stageRef.current.requestFullscreen()
+  }
+
+  const handleSendMessage = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const trimmed = draftMessage.trim()
+    if (!trimmed) return
+
+    setChatMessages((prev) => [...prev, { id: `${Date.now()}`, author: 'You', text: trimmed }])
+    setDraftMessage('')
+  }
+
   return (
     <LayoutContextProvider value={layoutContext}>
       <div className="grid min-h-[calc(100vh-140px)] gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#0e1012] shadow-[0_24px_70px_-36px_rgba(0,0,0,0.8)]">
+        <section ref={stageRef} className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#0e1012] shadow-[0_24px_70px_-36px_rgba(0,0,0,0.8)]">
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 text-xs text-slate-400">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-white/70" />
               <span>{name || roomId}</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Button variant={showChat ? 'primary' : 'secondary'} onClick={() => setShowChat((value) => !value)} className="px-3">
+                <ChatIcon className="h-4 w-4" />
+                Chat
+              </Button>
+              <Button variant="secondary" onClick={toggleFullscreen} className="px-3">
+                {isFullscreen ? <MinimizeIcon className="h-4 w-4" /> : <MaximizeIcon className="h-4 w-4" />}
+                {isFullscreen ? 'Exit full' : 'Full screen'}
+              </Button>
               <span>{connectionLabel(connectionState)}</span>
               {hasScreenShare && <span>Screen share</span>}
               {isRecording && <span>Recording</span>}
@@ -232,6 +276,14 @@ function RoomStage({
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-3 backdrop-blur-sm">
+                <Button variant={showChat ? 'primary' : 'secondary'} onClick={() => setShowChat((value) => !value)} className="px-3">
+                  <ChatIcon className="h-4 w-4" />
+                  Chat
+                </Button>
+                <Button variant="secondary" onClick={toggleFullscreen} className="px-3">
+                  {isFullscreen ? <MinimizeIcon className="h-4 w-4" /> : <MaximizeIcon className="h-4 w-4" />}
+                  {isFullscreen ? 'Exit full' : 'Full screen'}
+                </Button>
                 <ControlBar
                   controls={{ microphone: true, camera: true, screenShare: true, chat: false, settings: false, leave: true }}
                   variation="minimal"
@@ -273,6 +325,39 @@ function RoomStage({
               {participants.length === 0 && <div className="py-6 text-sm text-slate-500">Waiting for others to join.</div>}
             </div>
           </div>
+
+          {showChat && (
+            <div className="rounded-[24px] border border-white/10 bg-white/[0.02] p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm text-white">Chat</div>
+                <Button variant="ghost" onClick={() => setShowChat(false)} className="px-2 py-1 text-xs">
+                  Hide
+                </Button>
+              </div>
+              <div className="mt-3 space-y-3">
+                {chatMessages.map((message) => (
+                  <div key={message.id} className="rounded-[16px] border border-white/10 bg-black/20 p-3 text-sm">
+                    <div className="flex items-center justify-between gap-2 text-xs text-slate-400">
+                      <span>{message.author}</span>
+                      <span>now</span>
+                    </div>
+                    <p className="mt-2 leading-5 text-slate-200">{message.text}</p>
+                  </div>
+                ))}
+              </div>
+              <form onSubmit={handleSendMessage} className="mt-3 flex gap-2">
+                <Input
+                  value={draftMessage}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => setDraftMessage(event.target.value)}
+                  placeholder="Type a message"
+                  className="flex-1"
+                />
+                <Button type="submit" className="px-3">
+                  Send
+                </Button>
+              </form>
+            </div>
+          )}
 
           <div className="rounded-[24px] border border-white/10 bg-white/[0.02] p-4">
             <div className="text-sm text-white">Files</div>
