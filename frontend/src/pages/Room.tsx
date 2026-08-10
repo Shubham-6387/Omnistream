@@ -1,31 +1,57 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { getParticipantId } from '../lib/participant'
-import { joinRoom, listWaitingFiles, uploadFile, getVideoToken, startRecording, RoomFile, stopRecording } from '../lib/api'
-import { useRoomEvents, FileReadyPayload } from '../hooks/useRoomEvents'
-import { DropZone } from '../components/DropZone'
-import { FileList } from '../components/FileList'
-import { VideoPanel } from '../components/VideoPanel'
+import { Link, useParams } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
+import { getParticipantId } from '../lib/participant'
+import {
+  joinRoom,
+  listWaitingFiles,
+  uploadFile,
+  getVideoToken,
+  startRecording,
+  RoomFile,
+  stopRecording,
+} from '../lib/api'
+import { useRoomEvents, FileReadyPayload } from '../hooks/useRoomEvents'
+import { VideoPanel } from '../components/VideoPanel'
+import {
+  ArrowRightIcon,
+  Badge,
+  Button,
+  Card,
+  CheckIcon,
+  HomeIcon,
+  Input,
+  LinkIcon,
+  LoadingSpinner,
+  Modal,
+  QrIcon,
+  SparkIcon,
+  Toast,
+} from '../components/ui'
+
+type ToastState = {
+  title: string
+  description?: string
+  tone?: 'neutral' | 'success' | 'warning' | 'danger'
+}
 
 export function Room() {
   const { roomId = '' } = useParams()
+  const participantId = useRef(getParticipantId()).current
+  const joinUrl = `${window.location.origin}/room/${roomId}`
+
   const [showQR, setShowQR] = useState(false)
   const [copied, setCopied] = useState(false)
-  
-  const joinUrl = `${window.location.origin}/room/${roomId}`
-  const participantId = useRef(getParticipantId()).current
   const [displayName, setDisplayName] = useState('')
-
   const [joined, setJoined] = useState(false)
+  const [joiningRoom, setJoiningRoom] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [files, setFiles] = useState<RoomFile[]>([])
   const [uploading, setUploading] = useState(false)
   const [videoToken, setVideoToken] = useState<string | null>(null)
   const [livekitUrl, setLivekitUrl] = useState<string | null>(null)
-  
-  // New state to track if recording has been requested
   const [isRecording, setIsRecording] = useState(false)
+  const [toast, setToast] = useState<ToastState | null>(null)
 
   const refreshFiles = useCallback(async () => {
     try {
@@ -38,26 +64,55 @@ export function Room() {
 
   useEffect(() => {
     let cancelled = false
+    setJoiningRoom(true)
+    setError(null)
+
     ;(async () => {
       try {
         await joinRoom(roomId, participantId)
         if (cancelled) return
         setJoined(true)
         await refreshFiles()
+        setToast({
+          title: 'Room joined',
+          description: 'Your file queue and video token flow are ready.',
+          tone: 'success',
+        })
       } catch {
-        if (!cancelled) setError('Could not join this room. Check the room ID and try again.')
+        if (!cancelled) {
+          setError('Could not join this room. Check the room ID and try again.')
+          setToast({
+            title: 'Join failed',
+            description: 'The room could not be reached from the frontend.',
+            tone: 'danger',
+          })
+        }
+      } finally {
+        if (!cancelled) setJoiningRoom(false)
       }
     })()
+
     return () => {
       cancelled = true
     }
   }, [roomId, participantId, refreshFiles])
 
+  useEffect(() => {
+    if (!toast) return
+    const timeout = window.setTimeout(() => setToast(null), 2600)
+    return () => window.clearTimeout(timeout)
+  }, [toast])
+
   const handleFileReady = useCallback(
     (_payload: FileReadyPayload) => {
       refreshFiles()
+      setToast({
+        title: 'File ready',
+        description: 'A room file finished processing and is available for download.',
+        tone: 'success',
+      })
     },
-    [refreshFiles]
+    [refreshFiles],
   )
 
   const { connected } = useRoomEvents(roomId, handleFileReady)
@@ -69,8 +124,18 @@ export function Room() {
       for (const file of selected) {
         await uploadFile(roomId, file)
       }
+      setToast({
+        title: 'Upload sent',
+        description: 'Files were handed off to the ingestion service.',
+        tone: 'success',
+      })
     } catch {
       setError('Upload failed. Check that the ingestion service is reachable.')
+      setToast({
+        title: 'Upload failed',
+        description: 'The ingestion service could not accept the file transfer.',
+        tone: 'danger',
+      })
     } finally {
       setUploading(false)
     }
@@ -83,8 +148,18 @@ export function Room() {
       const { token, livekit_url } = await getVideoToken(roomId, participantId, displayName.trim())
       setVideoToken(token)
       setLivekitUrl(livekit_url)
+      setToast({
+        title: 'Video room ready',
+        description: 'LiveKit has issued a token for the meeting session.',
+        tone: 'success',
+      })
     } catch {
       setError('Could not start the video call.')
+      setToast({
+        title: 'Video call failed',
+        description: 'Token creation could not complete for this room.',
+        tone: 'danger',
+      })
     }
   }
 
@@ -92,154 +167,203 @@ export function Room() {
     try {
       await navigator.clipboard.writeText(joinUrl)
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setToast({
+        title: 'Invite copied',
+        description: 'Share the room link with another participant.',
+        tone: 'success',
+      })
+      window.setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error('Failed to copy link', err)
+      setToast({
+        title: 'Copy failed',
+        description: 'The browser did not allow clipboard access.',
+        tone: 'warning',
+      })
     }
   }
 
-  // New function to trigger the backend recording endpoint
-const toggleRecording = async () => {
+  const toggleRecording = async () => {
+    const nextRecordingState = !isRecording
+    setIsRecording(nextRecordingState)
+
     try {
-      if (isRecording) {
-        // Optimistically set to false for immediate UI feedback
-        setIsRecording(false);
-        await stopRecording(roomId);
+      if (nextRecordingState) {
+        await startRecording(roomId)
+        setToast({
+          title: 'Recording started',
+          description: 'The room is now sending recording commands to the backend.',
+          tone: 'success',
+        })
       } else {
-        // Optimistically set to true
-        setIsRecording(true);
-        await startRecording(roomId);
+        await stopRecording(roomId)
+        setToast({
+          title: 'Recording stopped',
+          description: 'Recording has been stopped for this room.',
+          tone: 'neutral',
+        })
       }
     } catch (err) {
-      console.error('Failed to toggle recording state', err);
-      // Revert the button state if the API call actually failed
-      setIsRecording((prev) => !prev);
+      console.error('Failed to toggle recording state', err)
+      setIsRecording((prev) => !prev)
+      setToast({
+        title: 'Recording update failed',
+        description: 'The backend rejected the recording request.',
+        tone: 'danger',
+      })
     }
-  };
+  }
 
-  if (error && !joined) {
+  if (error && !joined && !joiningRoom) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-50 to-indigo-50 p-6">
-        <div className="glass-surface rounded-[28px] p-8 text-center text-red-600">{error}</div>
-      </div>
+      <main className="omni-shell flex min-h-screen items-center justify-center p-6">
+        <Card className="w-full max-w-lg p-6 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-rose-400/20 bg-rose-500/10 text-rose-200">
+            <SparkIcon className="h-6 w-6" />
+          </div>
+          <h1 className="mt-5 text-2xl font-semibold text-white">Room unavailable</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-400">{error}</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <Button variant="secondary" onClick={() => window.location.reload()}>
+              Retry
+            </Button>
+            <Link to="/" className="omni-button-secondary px-4 py-2.5">
+              <HomeIcon className="h-4 w-4" />
+              Return home
+            </Link>
+          </div>
+        </Card>
+      </main>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-indigo-50 p-6">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <div className="glass-surface flex items-center justify-between rounded-[28px] p-6">
+    <main className="omni-shell space-y-5 pb-8">
+      <header className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/[0.03] px-4 py-4 backdrop-blur-xl sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-cyan-400/15 text-cyan-300">
+            <SparkIcon className="h-5 w-5" />
+          </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">Room</p>
-            <p className="font-mono text-sm text-slate-900">{roomId}</p>
+            <p className="text-lg font-semibold tracking-tight text-white">OmniStream</p>
+            <p className="text-sm text-slate-400">Meeting room shell</p>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Record AI Notes Button */}
-            <button
-              onClick={toggleRecording}
-              disabled={!videoToken}
-              className={`rounded-xl px-4 py-1.5 text-xs font-semibold shadow-sm ring-1 transition ${
-                isRecording 
-                  ? 'bg-red-50 text-red-600 ring-red-200 hover:bg-red-100' 
-                  : 'bg-white text-slate-700 ring-slate-200 hover:bg-slate-50'
-              } disabled:cursor-not-allowed disabled:opacity-50`}
-            >
-              {isRecording ? 'Stop Recording' : 'Record AI Notes'}
-            </button>
-            
-            <button
-              onClick={() => setShowQR(true)}
-              className="rounded-xl bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50"
-            >
-              Share
-            </button>
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                connected ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
-              }`}
-            >
-              {connected ? 'Live' : 'Connecting…'}
-            </span>
-          </div>
+        </Link>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone={connected ? 'success' : 'warning'}>{connected ? 'Events live' : 'Connecting'}</Badge>
+          <Badge tone={joiningRoom ? 'warning' : 'neutral'}>{joiningRoom ? 'Joining room' : 'Room ready'}</Badge>
+          <Button variant="secondary" onClick={handleCopyLink}>
+            <LinkIcon className="h-4 w-4" />
+            {copied ? 'Copied' : 'Copy invite'}
+          </Button>
+          <Button variant="secondary" onClick={() => setShowQR(true)}>
+            <QrIcon className="h-4 w-4" />
+            Share QR
+          </Button>
         </div>
+      </header>
 
-        {!videoToken ? (
-          <div className="glass-surface space-y-4 rounded-[28px] p-6">
-            <h2 className="text-sm font-semibold text-slate-900">Join the video call</h2>
-            <input 
-              type="text" 
-              placeholder="Enter your name" 
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleJoinVideo()}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-sky-400"
-              maxLength={32}
-            />
-            <button
-              onClick={handleJoinVideo}
-              disabled={!displayName.trim()}
-              className="w-full rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Join Room
-            </button>
-          </div>
-        ) : (
-          <VideoPanel serverUrl={livekitUrl!} token={videoToken} onDisconnect={() => setVideoToken(null)} />
-        )}
-
-        <div className="glass-surface rounded-[28px] p-6">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">Share a file</h2>
-          <DropZone onFilesSelected={handleFilesSelected} disabled={uploading} />
-        </div>
-
-        <div className="glass-surface rounded-[28px] p-6">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">Files in this room</h2>
-          <FileList files={files} roomId={roomId} participantId={participantId} onDownloaded={refreshFiles} />
-        </div>
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
-      </div>
-
-      {showQR && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-6 backdrop-blur-sm"
-          onClick={() => setShowQR(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-[28px] bg-white p-8 text-center shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="mb-6 text-lg font-bold text-slate-900">Join this room</h3>
-
-            <div className="mx-auto mb-6 flex justify-center rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
-              <QRCodeSVG
-                value={joinUrl}
-                size={220}
-                bgColor={"#ffffff"}
-                fgColor={"#0f172a"}
-                level={"L"}
-              />
+      {!videoToken ? (
+        <section className="mx-auto grid min-h-[64vh] max-w-2xl place-items-center">
+          <div className="w-full space-y-6 text-center">
+            <div className="space-y-3">
+              <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">Join your meeting</h1>
+              <p className="text-sm leading-6 text-slate-400">No account required.</p>
             </div>
 
-            <div className="mb-6 flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
-              <p className="truncate font-mono text-xs text-slate-500">{joinUrl}</p>
-              <button
-                onClick={handleCopyLink}
-                className="shrink-0 rounded-lg bg-sky-100 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-200"
-              >
-                {copied ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
+            <div className="mx-auto w-full max-w-md rounded-[28px] border border-white/10 bg-[#0e1012] p-6 text-left shadow-[0_24px_70px_-36px_rgba(0,0,0,0.8)]">
+              {joiningRoom ? (
+                <div className="space-y-4">
+                  <div className="h-4 w-24 animate-pulse rounded-full bg-white/10" />
+                  <div className="h-12 animate-pulse rounded-2xl bg-white/10" />
+                  <div className="h-12 animate-pulse rounded-full bg-white/10" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-slate-200" htmlFor="display-name">
+                    Display name
+                  </label>
+                  <Input
+                    id="display-name"
+                    type="text"
+                    placeholder="Enter your name"
+                    value={displayName}
+                    onChange={(event) => setDisplayName(event.target.value)}
+                    onKeyDown={(event) => event.key === 'Enter' && handleJoinVideo()}
+                    maxLength={32}
+                  />
 
-            <button
-              onClick={() => setShowQR(false)}
-              className="w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
-            >
-              Close
-            </button>
+                  <Button onClick={handleJoinVideo} disabled={!displayName.trim()} className="w-full">
+                    Join room
+                    <ArrowRightIcon className="h-4 w-4" />
+                  </Button>
+
+                  <div className="text-center text-xs text-slate-500">
+                    <button type="button" onClick={handleCopyLink} className="inline-flex items-center gap-1 transition hover:text-white">
+                      <LinkIcon className="h-3.5 w-3.5" />
+                      Copy invite link
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+        </section>
+      ) : (
+        <VideoPanel
+          serverUrl={livekitUrl!}
+          token={videoToken}
+          onDisconnect={() => setVideoToken(null)}
+          roomId={roomId}
+          joinUrl={joinUrl}
+          participantId={participantId}
+          files={files}
+          uploading={uploading}
+          onFilesSelected={handleFilesSelected}
+          onDownloaded={refreshFiles}
+          onCopyLink={handleCopyLink}
+          onOpenShare={() => setShowQR(true)}
+          copied={copied}
+          isRecording={isRecording}
+          onToggleRecording={toggleRecording}
+        />
+      )}
+
+      {error && joined && (
+        <div className="rounded-[20px] border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+          {error}
         </div>
       )}
-    </div>
+
+      {toast && (
+        <div className="fixed right-4 top-4 z-[60] w-[min(100vw-2rem,22rem)]">
+          <Toast title={toast.title} description={toast.description} tone={toast.tone} />
+        </div>
+      )}
+
+      <Modal
+        open={showQR}
+        onClose={() => setShowQR(false)}
+        title="Join this room"
+        description="Scan the QR code or copy the room link to open this session on another device."
+        footer={
+          <>
+            <Button variant="secondary" onClick={handleCopyLink}>
+              <LinkIcon className="h-4 w-4" />
+              {copied ? 'Copied' : 'Copy link'}
+            </Button>
+            <Button onClick={() => setShowQR(false)}>Close</Button>
+          </>
+        }
+      >
+        <div className="mx-auto flex justify-center rounded-[24px] border border-white/10 bg-white p-4">
+          <QRCodeSVG value={joinUrl} size={220} bgColor="#ffffff" fgColor="#0f172a" level="L" />
+        </div>
+        <div className="mt-4 rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 font-mono text-xs leading-5 text-slate-300">
+          {joinUrl}
+        </div>
+      </Modal>
+    </main>
   )
 }
