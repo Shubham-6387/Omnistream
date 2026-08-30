@@ -207,6 +207,12 @@ function RoomStage({
 
   const activeSpeakerNames = speakingParticipants.slice(0, 3).map((participant) => participant.name || participant.identity)
   const hasScreenShare = screenShareTracks.some((track) => track.publication.isSubscribed)
+  const sharedScreenTrack = screenShareTracks[0] ?? null
+  const floatingCameraTracks = tracks.filter((track) => {
+    if (!track.publication || track.publication.source !== Track.Source.Camera) return false
+    if (!sharedScreenTrack) return true
+    return !isEqualTrackRef(track, sharedScreenTrack)
+  })
 
   const toggleFullscreen = async () => {
     if (!stageRef.current) return
@@ -242,8 +248,17 @@ function RoomStage({
           <div className="relative min-h-[calc(100vh-205px)] p-3 sm:p-4">
             <div className="pointer-events-none absolute inset-0 omni-surface-grid opacity-[0.045]" />
             <div className="relative flex h-full min-h-[calc(100vh-205px)] flex-col gap-3">
-              <div className="flex-1 overflow-hidden rounded-[24px] border border-white/10 bg-black/25 p-2 sm:p-3">
-                {focusTrack ? (
+              <div className="relative flex-1 overflow-visible rounded-[24px] border border-white/10 bg-black/25 p-2 sm:p-3">
+                {hasScreenShare && sharedScreenTrack ? (
+                  <div className="relative h-full min-h-[calc(100vh-245px)] overflow-hidden rounded-[22px]">
+                    <FocusLayout trackRef={sharedScreenTrack} className="meeting-focus-tile h-full rounded-[22px] border border-white/10 bg-slate-900/90" />
+                    <div className="pointer-events-none absolute bottom-4 right-4 z-20 w-[220px] max-w-[32%] rounded-[18px] border border-white/10 bg-black/45 p-2 shadow-[0_18px_45px_-28px_rgba(0,0,0,0.8)] backdrop-blur-sm">
+                      <CarouselLayout tracks={floatingCameraTracks} className="meeting-carousel h-[140px] w-full">
+                        <ParticipantTile className="meeting-participant-tile h-full w-full rounded-[14px] border border-white/10 bg-slate-900/80" />
+                      </CarouselLayout>
+                    </div>
+                  </div>
+                ) : focusTrack ? (
                   <FocusLayoutContainer className="h-full min-h-[calc(100vh-245px)] gap-3">
                     <CarouselLayout tracks={tracks.filter((track) => !isEqualTrackRef(track, focusTrack))} className="meeting-carousel">
                       <ParticipantTile className="meeting-participant-tile aspect-[16/10] rounded-[20px] border border-white/10 bg-slate-900/80" />
