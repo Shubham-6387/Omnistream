@@ -93,13 +93,6 @@ function ProductVisual() {
               </div>
             </div>
             <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-3">
-              <div className="text-sm text-white">Chat</div>
-              <div className="mt-2 space-y-2 text-xs text-slate-400">
-                <div>Design looks clean.</div>
-                <div>Share screen when ready.</div>
-              </div>
-            </div>
-            <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-3">
               <div className="text-sm text-white">Files</div>
               <div className="mt-2 text-xs text-slate-400">2 ready for download</div>
             </div>
@@ -148,7 +141,6 @@ export function Home() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <a href="#join" className="hidden text-sm text-slate-300 transition hover:text-white sm:inline">Sign in</a>
           <Button onClick={handleCreate} disabled={creating}>
             {creating ? <LoadingSpinner /> : 'Get started'}
           </Button>
@@ -238,24 +230,6 @@ export function Home() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section id="developers" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="space-y-3">
-          <h2 className="text-3xl font-semibold tracking-tight text-white">Technical layout</h2>
-          <p className="text-sm leading-6 text-slate-400">LiveKit for media, Kafka for events, MinIO for files, Go API for control.</p>
-        </div>
-        <div className="rounded-[28px] border border-white/10 bg-[#0e1012] p-6 text-sm text-slate-300">
-          <pre className="whitespace-pre-wrap font-mono leading-7 text-slate-300">{`            OmniStream
-                │
-      ┌─────────┼─────────┐
-      │         │         │
-    Media     Events     Storage
-      │         │         │
-   LiveKit    Kafka      MinIO
-                │
-             Go API`}</pre>
         </div>
       </section>
 

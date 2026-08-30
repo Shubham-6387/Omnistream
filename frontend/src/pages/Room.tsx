@@ -13,6 +13,8 @@ import {
 } from '../lib/api'
 import { useRoomEvents, FileReadyPayload } from '../hooks/useRoomEvents'
 import { VideoPanel } from '../components/VideoPanel'
+import { DropZone } from '../components/DropZone'
+import { FileList } from '../components/FileList'
 import {
   ArrowRightIcon,
   Badge,
@@ -43,6 +45,7 @@ export function Room() {
   const [showQR, setShowQR] = useState(false)
   const [copied, setCopied] = useState(false)
   const [displayName, setDisplayName] = useState('')
+  const [showJoinMeetPrompt, setShowJoinMeetPrompt] = useState(false)
   const [joined, setJoined] = useState(false)
   const [joiningRoom, setJoiningRoom] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -265,22 +268,47 @@ export function Room() {
       </header>
 
       {!videoToken ? (
-        <section className="mx-auto grid min-h-[64vh] max-w-2xl place-items-center">
-          <div className="w-full space-y-6 text-center">
-            <div className="space-y-3">
-              <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">Join your meeting</h1>
-              <p className="text-sm leading-6 text-slate-400">No account required.</p>
-            </div>
+        <section className="mx-auto w-full max-w-6xl">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)]">
+            <div className="rounded-[28px] border border-white/10 bg-[#0e1012] p-6 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.8)]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h1 className="text-3xl font-semibold tracking-tight text-white">Room files</h1>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">Upload what you need here. Join the meeting whenever you’re ready.</p>
+                </div>
+                <Badge tone={files.length ? 'success' : 'neutral'}>{files.length} file{files.length === 1 ? '' : 's'}</Badge>
+              </div>
 
-            <div className="mx-auto w-full max-w-md rounded-[28px] border border-white/10 bg-[#0e1012] p-6 text-left shadow-[0_24px_70px_-36px_rgba(0,0,0,0.8)]">
               {joiningRoom ? (
-                <div className="space-y-4">
-                  <div className="h-4 w-24 animate-pulse rounded-full bg-white/10" />
-                  <div className="h-12 animate-pulse rounded-2xl bg-white/10" />
-                  <div className="h-12 animate-pulse rounded-full bg-white/10" />
+                <div className="mt-6 space-y-4">
+                  <div className="h-14 animate-pulse rounded-[22px] bg-white/10" />
+                  <div className="h-32 animate-pulse rounded-[22px] bg-white/10" />
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="mt-6 space-y-5">
+                  <DropZone onFilesSelected={handleFilesSelected} disabled={uploading} />
+                  <FileList files={files} roomId={roomId} participantId={participantId} onDownloaded={refreshFiles} />
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[28px] border border-white/10 bg-[#0e1012] p-6 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.8)]">
+              <h2 className="text-2xl font-semibold tracking-tight text-white">Join the meet</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-400">Video is optional. Upload files first and start the call when needed.</p>
+
+              {!showJoinMeetPrompt ? (
+                <div className="mt-6 space-y-3">
+                  <Button onClick={() => setShowJoinMeetPrompt(true)} className="w-full">
+                    Join meet
+                    <ArrowRightIcon className="h-4 w-4" />
+                  </Button>
+                  <Button variant="secondary" onClick={handleCopyLink} className="w-full">
+                    <LinkIcon className="h-4 w-4" />
+                    Copy invite link
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-6 space-y-4">
                   <label className="block text-sm font-medium text-slate-200" htmlFor="display-name">
                     Display name
                   </label>
@@ -293,18 +321,17 @@ export function Room() {
                     onKeyDown={(event) => event.key === 'Enter' && handleJoinVideo()}
                     maxLength={32}
                   />
-
                   <Button onClick={handleJoinVideo} disabled={!displayName.trim()} className="w-full">
-                    Join room
+                    Start meeting
                     <ArrowRightIcon className="h-4 w-4" />
                   </Button>
-
-                  <div className="text-center text-xs text-slate-500">
-                    <button type="button" onClick={handleCopyLink} className="inline-flex items-center gap-1 transition hover:text-white">
-                      <LinkIcon className="h-3.5 w-3.5" />
-                      Copy invite link
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowJoinMeetPrompt(false)}
+                    className="text-sm text-slate-400 transition hover:text-white"
+                  >
+                    Cancel
+                  </button>
                 </div>
               )}
             </div>

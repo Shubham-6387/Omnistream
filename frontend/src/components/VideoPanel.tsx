@@ -23,7 +23,7 @@ import { isEqualTrackRef, isTrackReference, type TrackReferenceOrPlaceholder } f
 import { ConnectionQuality, RoomEvent, Track, type Participant } from 'livekit-client'
 import { RoomFile } from '../lib/api'
 import { DropZone } from './DropZone'
-import { Badge, Button, Card, CheckIcon, ChatIcon, CopyIcon, Input, MaximizeIcon, MinimizeIcon, MoreIcon, QrIcon, RecordingIcon, ScreenShareIcon, SignalIcon, SparkIcon, UsersIcon, VideoCameraIcon } from './ui'
+import { Badge, Button, Card, CheckIcon, CopyIcon, MaximizeIcon, MinimizeIcon, MoreIcon, QrIcon, RecordingIcon, ScreenShareIcon, SignalIcon, SparkIcon, UsersIcon, VideoCameraIcon } from './ui'
 import { FileList } from './FileList'
 
 interface VideoPanelProps {
@@ -180,12 +180,7 @@ function RoomStage({
   const connectionState = useConnectionState()
   const { name } = useRoomInfo()
   const { localParticipant } = useLocalParticipant()
-  const [showChat, setShowChat] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [draftMessage, setDraftMessage] = useState('')
-  const [chatMessages, setChatMessages] = useState([
-    { id: 'welcome', author: 'System', text: 'Chat is ready for this room.' },
-  ])
   const stageRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -224,15 +219,6 @@ function RoomStage({
     await stageRef.current.requestFullscreen()
   }
 
-  const handleSendMessage = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const trimmed = draftMessage.trim()
-    if (!trimmed) return
-
-    setChatMessages((prev) => [...prev, { id: `${Date.now()}`, author: 'You', text: trimmed }])
-    setDraftMessage('')
-  }
-
   return (
     <LayoutContextProvider value={layoutContext}>
       <div className="grid min-h-[calc(100vh-140px)] gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -243,10 +229,6 @@ function RoomStage({
               <span>{name || roomId}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant={showChat ? 'primary' : 'secondary'} onClick={() => setShowChat((value) => !value)} className="px-3">
-                <ChatIcon className="h-4 w-4" />
-                Chat
-              </Button>
               <Button variant="secondary" onClick={toggleFullscreen} className="px-3">
                 {isFullscreen ? <MinimizeIcon className="h-4 w-4" /> : <MaximizeIcon className="h-4 w-4" />}
                 {isFullscreen ? 'Exit full' : 'Full screen'}
@@ -276,10 +258,6 @@ function RoomStage({
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-3 backdrop-blur-sm">
-                <Button variant={showChat ? 'primary' : 'secondary'} onClick={() => setShowChat((value) => !value)} className="px-3">
-                  <ChatIcon className="h-4 w-4" />
-                  Chat
-                </Button>
                 <Button variant="secondary" onClick={toggleFullscreen} className="px-3">
                   {isFullscreen ? <MinimizeIcon className="h-4 w-4" /> : <MaximizeIcon className="h-4 w-4" />}
                   {isFullscreen ? 'Exit full' : 'Full screen'}
@@ -325,39 +303,6 @@ function RoomStage({
               {participants.length === 0 && <div className="py-6 text-sm text-slate-500">Waiting for others to join.</div>}
             </div>
           </div>
-
-          {showChat && (
-            <div className="rounded-[24px] border border-white/10 bg-white/[0.02] p-4">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm text-white">Chat</div>
-                <Button variant="ghost" onClick={() => setShowChat(false)} className="px-2 py-1 text-xs">
-                  Hide
-                </Button>
-              </div>
-              <div className="mt-3 space-y-3">
-                {chatMessages.map((message) => (
-                  <div key={message.id} className="rounded-[16px] border border-white/10 bg-black/20 p-3 text-sm">
-                    <div className="flex items-center justify-between gap-2 text-xs text-slate-400">
-                      <span>{message.author}</span>
-                      <span>now</span>
-                    </div>
-                    <p className="mt-2 leading-5 text-slate-200">{message.text}</p>
-                  </div>
-                ))}
-              </div>
-              <form onSubmit={handleSendMessage} className="mt-3 flex gap-2">
-                <Input
-                  value={draftMessage}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => setDraftMessage(event.target.value)}
-                  placeholder="Type a message"
-                  className="flex-1"
-                />
-                <Button type="submit" className="px-3">
-                  Send
-                </Button>
-              </form>
-            </div>
-          )}
 
           <div className="rounded-[24px] border border-white/10 bg-white/[0.02] p-4">
             <div className="text-sm text-white">Files</div>
