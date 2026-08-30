@@ -250,11 +250,12 @@ function RoomStage({
             <div className="relative flex h-full min-h-[calc(100vh-205px)] flex-col gap-3">
               <div className="relative flex-1 overflow-visible rounded-[24px] border border-white/10 bg-black/25 p-2 sm:p-3">
                 {hasScreenShare && sharedScreenTrack ? (
-                  <div className="relative h-full min-h-[calc(100vh-245px)] overflow-hidden rounded-[22px]">
-                    <FocusLayout trackRef={sharedScreenTrack} className="meeting-focus-tile h-full rounded-[22px] border border-white/10 bg-slate-900/90" />
-                    <div className="pointer-events-none absolute bottom-4 right-4 z-20 w-[220px] max-w-[32%] rounded-[18px] border border-white/10 bg-black/45 p-2 shadow-[0_18px_45px_-28px_rgba(0,0,0,0.8)] backdrop-blur-sm">
-                      <CarouselLayout tracks={floatingCameraTracks} className="meeting-carousel h-[140px] w-full">
-                        <ParticipantTile className="meeting-participant-tile h-full w-full rounded-[14px] border border-white/10 bg-slate-900/80" />
+                  <div className="relative h-full min-h-[calc(100vh-245px)] overflow-hidden rounded-[22px] bg-[#111827]">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.08),transparent_45%)]" />
+                    <FocusLayout trackRef={sharedScreenTrack} className="meeting-focus-tile relative z-10 h-full w-full rounded-[22px] border border-white/10 bg-slate-900/90" />
+                    <div className="pointer-events-none absolute bottom-4 right-4 z-20 w-[180px] max-w-[28%] rounded-[16px] border border-white/10 bg-black/55 p-1.5 shadow-[0_18px_45px_-28px_rgba(0,0,0,0.8)] backdrop-blur-sm">
+                      <CarouselLayout tracks={floatingCameraTracks} className="meeting-carousel h-[110px] w-full">
+                        <ParticipantTile className="meeting-participant-tile h-full w-full rounded-[12px] border border-white/10 bg-slate-900/80" />
                       </CarouselLayout>
                     </div>
                   </div>

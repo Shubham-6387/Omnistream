@@ -37,6 +37,33 @@ type ToastState = {
   tone?: 'neutral' | 'success' | 'warning' | 'danger'
 }
 
+type SavedRoomSession = {
+  roomId: string
+  displayName: string
+}
+
+const ROOM_SESSION_KEY = 'omnistream_room_session'
+
+function readRoomSession(): SavedRoomSession | null {
+  try {
+    const raw = sessionStorage.getItem(ROOM_SESSION_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<SavedRoomSession>
+    if (!parsed.roomId || !parsed.displayName) return null
+    return { roomId: parsed.roomId, displayName: parsed.displayName }
+  } catch {
+    return null
+  }
+}
+
+function saveRoomSession(roomId: string, displayName: string) {
+  sessionStorage.setItem(ROOM_SESSION_KEY, JSON.stringify({ roomId, displayName }))
+}
+
+function clearRoomSession() {
+  sessionStorage.removeItem(ROOM_SESSION_KEY)
+}
+
 export function Room() {
   const { roomId = '' } = useParams()
   const participantId = useRef(getParticipantId()).current
@@ -44,7 +71,10 @@ export function Room() {
 
   const [showQR, setShowQR] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [displayName, setDisplayName] = useState('')
+  const [displayName, setDisplayName] = useState(() => {
+    const savedSession = readRoomSession()
+    return savedSession?.roomId === roomId ? savedSession.displayName : ''
+  })
   const [showJoinMeetPrompt, setShowJoinMeetPrompt] = useState(false)
   const [joined, setJoined] = useState(false)
   const [joiningRoom, setJoiningRoom] = useState(true)
@@ -76,6 +106,23 @@ export function Room() {
         if (cancelled) return
         setJoined(true)
         await refreshFiles()
+
+        const savedSession = readRoomSession()
+        if (savedSession && savedSession.roomId === roomId && savedSession.displayName) {
+          setDisplayName(savedSession.displayName)
+          try {
+            const { token, livekit_url } = await getVideoToken(roomId, participantId, savedSession.displayName)
+            if (!cancelled) {
+              setVideoToken(token)
+              setLivekitUrl(livekit_url)
+            }
+          } catch {
+            if (!cancelled) {
+              setError('Your meeting session expired. Please join again.')
+            }
+          }
+        }
+
         setToast({
           title: 'Room joined',
           description: 'Your file queue and video token flow are ready.',
@@ -145,10 +192,13 @@ export function Room() {
   }
 
   const handleJoinVideo = async () => {
-    if (!displayName.trim()) return
+    const nextName = displayName.trim()
+    if (!nextName) return
     setError(null)
+    setShowJoinMeetPrompt(false)
+    saveRoomSession(roomId, nextName)
     try {
-      const { token, livekit_url } = await getVideoToken(roomId, participantId, displayName.trim())
+      const { token, livekit_url } = await getVideoToken(roomId, participantId, nextName)
       setVideoToken(token)
       setLivekitUrl(livekit_url)
       setToast({
@@ -157,6 +207,7 @@ export function Room() {
         tone: 'success',
       })
     } catch {
+      clearRoomSession()
       setError('Could not start the video call.')
       setToast({
         title: 'Video call failed',
@@ -341,7 +392,10 @@ export function Room() {
         <VideoPanel
           serverUrl={livekitUrl!}
           token={videoToken}
-          onDisconnect={() => setVideoToken(null)}
+          onDisconnect={() => {
+            setVideoToken(null)
+            clearRoomSession()
+          }}
           roomId={roomId}
           joinUrl={joinUrl}
           participantId={participantId}
