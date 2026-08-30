@@ -244,52 +244,40 @@ function RoomStage({
             </div>
           </div>
 
-          <div className="relative flex min-h-[calc(100vh-205px)]">
-            <div className="flex w-14 flex-col items-center justify-between border-r border-white/10 bg-white/[0.01] py-4">
-              <div className="flex flex-col items-center gap-3">
-                <button className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300">◌</button>
-                <button className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300">◍</button>
-                <button className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300">⌁</button>
-                <button className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300">◫</button>
-              </div>
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300">⋯</div>
-            </div>
-
-            <div className="relative flex-1 p-3 sm:p-4">
-              <div className="pointer-events-none absolute inset-0 omni-surface-grid opacity-[0.045]" />
-              <div className="relative flex h-full flex-col gap-3">
-                <div className="relative flex-1 overflow-visible rounded-[24px] border border-white/10 bg-black/25 p-2 sm:p-3">
-                  {hasScreenShare && sharedScreenTrack ? (
-                    <div className="relative h-full min-h-[calc(100vh-245px)] overflow-hidden rounded-[22px] bg-[#111827]">
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.08),transparent_45%)]" />
-                      <FocusLayout trackRef={sharedScreenTrack} className="meeting-focus-tile relative z-10 h-full w-full rounded-[22px] border border-white/10 bg-slate-900/90" />
-                      <div className="pointer-events-none absolute bottom-4 right-4 z-20 w-[180px] max-w-[28%] rounded-[16px] border border-white/10 bg-black/55 p-1.5 shadow-[0_18px_45px_-28px_rgba(0,0,0,0.8)] backdrop-blur-sm">
-                        <CarouselLayout tracks={floatingCameraTracks} className="meeting-carousel h-[110px] w-full">
-                          <ParticipantTile className="meeting-participant-tile h-full w-full rounded-[12px] border border-white/10 bg-slate-900/80" />
-                        </CarouselLayout>
-                      </div>
-                    </div>
-                  ) : focusTrack ? (
-                    <FocusLayoutContainer className="h-full min-h-[calc(100vh-245px)] gap-3">
-                      <CarouselLayout tracks={tracks.filter((track) => !isEqualTrackRef(track, focusTrack))} className="meeting-carousel">
-                        <ParticipantTile className="meeting-participant-tile aspect-[16/10] rounded-[20px] border border-white/10 bg-slate-900/80" />
+          <div className="relative min-h-[calc(100vh-205px)] p-3 sm:p-4">
+            <div className="pointer-events-none absolute inset-0 omni-surface-grid opacity-[0.045]" />
+            <div className="relative flex h-full min-h-[calc(100vh-205px)] flex-col gap-3">
+              <div className="relative flex-1 overflow-visible rounded-[24px] border border-white/10 bg-black/25 p-2 sm:p-3">
+                {hasScreenShare && sharedScreenTrack ? (
+                  <div className="relative h-full min-h-[calc(100vh-245px)] overflow-hidden rounded-[22px] bg-[#111827]">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.08),transparent_45%)]" />
+                    <FocusLayout trackRef={sharedScreenTrack} className="meeting-focus-tile relative z-10 h-full w-full rounded-[22px] border border-white/10 bg-slate-900/90" />
+                    <div className="pointer-events-none absolute bottom-4 right-4 z-20 w-[190px] max-w-[28%] rounded-[14px] border border-white/10 bg-black/45 p-1 shadow-[0_10px_25px_-18px_rgba(0,0,0,0.95)] backdrop-blur-[2px]">
+                      <CarouselLayout tracks={floatingCameraTracks} className="meeting-carousel h-[120px] w-full">
+                        <ParticipantTile className="meeting-participant-tile h-full w-full rounded-[10px] border border-white/10 bg-slate-900/80" />
                       </CarouselLayout>
-                      <FocusLayout trackRef={focusTrack} className="meeting-focus-tile rounded-[22px] border border-white/10 bg-slate-900/90" />
-                    </FocusLayoutContainer>
-                  ) : (
-                    <GridLayout tracks={tracks} className="meeting-grid h-full min-h-[calc(100vh-245px)] gap-3">
-                      <ParticipantTile className="meeting-participant-tile aspect-[4/3] rounded-[22px] border border-white/10 bg-slate-900/80" />
-                    </GridLayout>
-                  )}
-                </div>
+                    </div>
+                  </div>
+                ) : focusTrack ? (
+                  <FocusLayoutContainer className="h-full min-h-[calc(100vh-245px)] gap-3">
+                    <CarouselLayout tracks={tracks.filter((track) => !isEqualTrackRef(track, focusTrack))} className="meeting-carousel">
+                      <ParticipantTile className="meeting-participant-tile aspect-[16/10] rounded-[20px] border border-white/10 bg-slate-900/80" />
+                    </CarouselLayout>
+                    <FocusLayout trackRef={focusTrack} className="meeting-focus-tile rounded-[22px] border border-white/10 bg-slate-900/90" />
+                  </FocusLayoutContainer>
+                ) : (
+                  <GridLayout tracks={tracks} className="meeting-grid h-full min-h-[calc(100vh-245px)] gap-3">
+                    <ParticipantTile className="meeting-participant-tile aspect-[4/3] rounded-[22px] border border-white/10 bg-slate-900/80" />
+                  </GridLayout>
+                )}
+              </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-3 backdrop-blur-sm">
-                  <ControlBar
-                    controls={{ microphone: true, camera: true, screenShare: true, chat: false, settings: false, leave: true }}
-                    variation="minimal"
-                    className="meeting-control-bar"
-                  />
-                </div>
+              <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-3 backdrop-blur-sm">
+                <ControlBar
+                  controls={{ microphone: true, camera: true, screenShare: true, chat: false, settings: false, leave: true }}
+                  variation="minimal"
+                  className="meeting-control-bar"
+                />
               </div>
             </div>
           </div>
