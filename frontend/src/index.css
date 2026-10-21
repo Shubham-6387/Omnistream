@@ -6,28 +6,28 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
-    --bg: 220 15% 4%;
-    --bg-elevated: 220 14% 6%;
-    --panel: 220 14% 8%;
-    --panel-strong: 220 14% 10%;
-    --border: 0 0% 100% / 0.08;
-    --border-strong: 0 0% 100% / 0.12;
-    --text: 0 0% 96%;
-    --muted: 220 6% 58%;
-    --muted-strong: 220 6% 46%;
-    --accent: 0 0% 96%;
-    --accent-soft: 0 0% 96% / 0.08;
-    --success: 0 0% 96%;
-    --warning: 0 0% 96%;
-    --danger: 0 0% 96%;
-    --shadow: 0 18px 48px -28px rgb(0 0 0 / 0.55);
-    --radius: 20px;
+    color-scheme: light;
+    --bg: 220 33% 98%;
+    --bg-elevated: 0 0% 100%;
+    --panel: 220 25% 99%;
+    --panel-strong: 0 0% 100%;
+    --border: 218 24% 89%;
+    --border-strong: 218 22% 82%;
+    --text: 220 28% 17%;
+    --muted: 217 14% 43%;
+    --muted-strong: 217 16% 33%;
+    --accent: 218 38% 37%;
+    --accent-soft: 218 38% 37% / 0.09;
+    --success: 153 42% 34%;
+    --warning: 35 75% 40%;
+    --danger: 355 58% 47%;
+    --shadow: 0 18px 48px -30px rgb(30 41 59 / 0.22);
+    --radius: 22px;
   }
 
   html {
     min-height: 100%;
-    background: #08090a;
+    background: #f4f6fa;
   }
 
   body {
@@ -35,7 +35,9 @@
     margin: 0;
     font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     color: hsl(var(--text));
-    background: #08090a;
+    background:
+      radial-gradient(ellipse at 50% -20%, rgb(255 255 255 / 0.96), transparent 58%),
+      #f4f6fa;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -50,12 +52,12 @@
   }
 
   ::selection {
-    background: hsl(var(--accent) / 0.28);
+    background: hsl(var(--accent) / 0.16);
     color: hsl(var(--text));
   }
 
   :focus-visible {
-    outline: 2px solid hsl(var(--accent));
+    outline: 2px solid #6d88b3;
     outline-offset: 2px;
   }
 
@@ -66,7 +68,9 @@
 
 @layer components {
   .glass-surface {
-    @apply border border-white/10 bg-white/[0.03] shadow-[0_18px_48px_-28px_rgba(0,0,0,0.55)];
+    @apply border shadow-[0_18px_48px_-28px_rgba(30,41,59,0.18)];
+    border-color: hsl(var(--border));
+    background: hsl(var(--bg-elevated) / 0.86);
   }
 
   .omni-shell {
@@ -74,31 +78,42 @@
   }
 
   .omni-panel {
-    @apply border border-white/10 bg-white/[0.03] shadow-[0_18px_48px_-28px_rgba(0,0,0,0.55)];
+    @apply border shadow-[0_18px_48px_-28px_rgba(30,41,59,0.18)];
+    border-color: hsl(var(--border));
+    background: hsl(var(--panel));
   }
 
   .omni-panel-strong {
-    @apply border border-white/12 bg-[#0e1012] shadow-[0_22px_60px_-30px_rgba(0,0,0,0.65)];
+    @apply border shadow-[0_22px_60px_-30px_rgba(30,41,59,0.2)];
+    border-color: hsl(var(--border));
+    background: hsl(var(--panel-strong));
   }
 
   .omni-card {
-    @apply rounded-[var(--radius)] border border-white/10 bg-[#0e1012] shadow-[0_18px_48px_-28px_rgba(0,0,0,0.55)];
+    @apply rounded-[var(--radius)] border shadow-[0_18px_48px_-28px_rgba(30,41,59,0.18)];
+    border-color: hsl(var(--border));
+    background: hsl(var(--panel-strong));
   }
 
   .omni-card-soft {
-    @apply rounded-[18px] border border-white/10 bg-white/[0.02];
+    @apply rounded-[18px] border;
+    border-color: hsl(var(--border));
+    background: hsl(var(--panel));
   }
 
   .omni-label {
-    @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400;
+    @apply text-[11px] font-semibold uppercase tracking-[0.18em];
+    color: hsl(var(--muted));
   }
 
   .omni-title {
-    @apply text-balance text-3xl font-semibold tracking-tight text-white sm:text-4xl;
+    @apply text-balance text-3xl font-semibold tracking-tight sm:text-4xl;
+    color: hsl(var(--text));
   }
 
   .omni-subtitle {
-    @apply text-pretty text-sm leading-6 text-slate-400 sm:text-base;
+    @apply text-pretty text-sm leading-6 sm:text-base;
+    color: hsl(var(--muted));
   }
 
   .omni-button {
@@ -106,23 +121,63 @@
   }
 
   .omni-button-primary {
-    @apply omni-button bg-white text-slate-950 hover:bg-white/90 active:translate-y-0;
+    @apply omni-button active:translate-y-0;
+    color: #fff;
+    background: #405a83;
+    box-shadow: 0 5px 14px -9px rgb(36 55 84 / 0.65);
+  }
+
+  .omni-button-primary:hover {
+    background: #334b70;
   }
 
   .omni-button-secondary {
-    @apply omni-button border border-white/10 bg-white/[0.02] text-white hover:bg-white/[0.06] active:translate-y-0;
+    @apply omni-button border active:translate-y-0;
+    color: #34445c;
+    border-color: #d8e0eb;
+    background: #fff;
+  }
+
+  .omni-button-secondary:hover {
+    background: #f0f3f8;
+    border-color: #c5d0df;
   }
 
   .omni-button-ghost {
-    @apply omni-button text-slate-300 hover:bg-white/[0.04] hover:text-white;
+    @apply omni-button;
+    color: #596a82;
+  }
+
+  .omni-button-ghost:hover {
+    background: #edf1f6;
+    color: #26364d;
   }
 
   .omni-button-danger {
-    @apply omni-button bg-white text-slate-950 hover:bg-white/90 active:translate-y-0;
+    @apply omni-button active:translate-y-0;
+    color: #fff;
+    background: #bd4c55;
+  }
+
+  .omni-button-danger:hover {
+    background: #a83d47;
   }
 
   .omni-input {
-    @apply h-12 w-full rounded-2xl border border-white/10 bg-white/[0.02] px-4 text-sm text-white placeholder:text-slate-500 transition focus:border-white/30 focus:bg-white/[0.03] focus:outline-none;
+    @apply h-12 w-full rounded-2xl border px-4 text-sm transition focus:outline-none;
+    border-color: #d8e0eb;
+    color: #26364d;
+    background: #fff;
+    box-shadow: inset 0 1px 2px rgb(30 41 59 / 0.025);
+  }
+
+  .omni-input::placeholder {
+    color: #8793a5;
+  }
+
+  .omni-input:focus {
+    border-color: #728bb1;
+    box-shadow: 0 0 0 3px rgb(83 111 156 / 0.12);
   }
 
   .omni-badge {
@@ -130,29 +185,37 @@
   }
 
   .omni-badge-neutral {
-    @apply border-white/10 bg-white/[0.03] text-slate-300;
+    border-color: hsl(var(--border));
+    background: #f2f5f9;
+    color: #596a82;
   }
 
   .omni-badge-success {
-    @apply border-white/10 bg-white/[0.03] text-slate-200;
+    border-color: #dce9e0;
+    background: #edf5ef;
+    color: #3c7555;
   }
 
   .omni-badge-danger {
-    @apply border-white/10 bg-white/[0.03] text-slate-200;
+    border-color: #f0e3c8;
+    background: #fbf5e9;
+    color: #8a6527;
   }
 
   .omni-badge-warning {
-    @apply border-white/10 bg-white/[0.03] text-slate-200;
+    border-color: #efdadd;
+    background: #fbf0f1;
+    color: #a64750;
   }
 
   .omni-divider {
-    @apply h-px w-full bg-white/10;
+    @apply h-px w-full bg-slate-200;
   }
 
   .omni-surface-grid {
     background-image:
-      linear-gradient(to right, rgb(255 255 255 / 0.025) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+      linear-gradient(to right, rgb(69 91 125 / 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(69 91 125 / 0.045) 1px, transparent 1px);
     background-size: 28px 28px;
   }
 
@@ -167,12 +230,12 @@
 
   .meeting-participant-tile[data-lk-speaking='true'] {
     box-shadow:
-      0 0 0 1px rgb(34 211 238 / 0.65),
-      0 20px 60px -30px rgb(34 211 238 / 0.4);
+      0 0 0 2px rgb(105 143 197 / 0.75),
+      0 20px 60px -30px rgb(105 143 197 / 0.38);
   }
 
   .meeting-participant-tile[data-lk-local-participant='true'] {
-    border-color: rgb(103 232 249 / 0.35);
+    border-color: rgb(105 143 197 / 0.55);
   }
 
   .meeting-control-bar {
@@ -180,16 +243,135 @@
   }
 
   .meeting-control-bar :where(.lk-button-group) {
-    @apply rounded-full border border-white/10 bg-white/[0.03] p-1;
+    @apply rounded-full border bg-slate-50 p-1;
+    border-color: #dce3ed;
   }
 
   .meeting-control-bar :where(button) {
-    @apply rounded-full border border-white/10 bg-white/[0.04] text-slate-200 shadow-none transition hover:border-white/20 hover:bg-white/[0.08];
+    @apply rounded-full border bg-white text-slate-700 shadow-none transition;
+    border-color: #d6deea;
+  }
+
+  .meeting-control-bar :where(button:hover) {
+    border-color: #9daec6;
+    background: #edf2f8;
   }
 
   .meeting-control-bar :where(button:disabled) {
     @apply cursor-not-allowed opacity-50;
   }
+}
+
+/* The app chrome uses a soft slate and paper palette. The video stage stays
+   dark so camera feeds remain legible and visually distinct from the UI. */
+body [class*="text-white"] {
+  color: #1f2b3d !important;
+}
+
+body [class*="text-slate-200"],
+body [class*="text-slate-300"] {
+  color: #495a72 !important;
+}
+
+body [class*="text-slate-400"],
+body [class*="text-slate-500"] {
+  color: #68788f !important;
+}
+
+body [class*="border-white/"] {
+  border-color: #dfe5ee !important;
+}
+
+body [class*="bg-white/"] {
+  background-color: rgb(62 84 117 / 0.045) !important;
+}
+
+body [class*="bg-white/[0.02]"] {
+  background-color: rgb(62 84 117 / 0.035) !important;
+}
+
+body [class*="bg-white/[0.03]"] {
+  background-color: rgb(62 84 117 / 0.06) !important;
+}
+
+body [class*="bg-white/[0.04]"] {
+  background-color: rgb(62 84 117 / 0.075) !important;
+}
+
+body [class*="bg-black/"] {
+  background-color: rgb(37 52 74 / 0.055) !important;
+}
+
+body [class*="bg-[#0e1012]"] {
+  background-color: #fff !important;
+}
+
+body .omni-shell [class*="bg-[linear-gradient"] {
+  background-image: linear-gradient(145deg, #f1f4f8, #e7ecf3) !important;
+}
+
+body .omni-shell [class*="bg-black/25"] {
+  background-color: rgb(43 60 84 / 0.055) !important;
+}
+
+body .omni-shell [class*="bg-black/40"] {
+  background-color: rgb(43 60 84 / 0.095) !important;
+}
+
+body .omni-shell [class*="bg-black/50"] {
+  background-color: rgb(43 60 84 / 0.16) !important;
+}
+
+body [class*="text-cyan-"] {
+  color: #506d9b !important;
+}
+
+body [class*="bg-cyan-"] {
+  background-color: #e9eff8 !important;
+}
+
+body .omni-meeting-stage {
+  color: #eef3fa;
+  border-color: #283448;
+  background: #111a28;
+  box-shadow: 0 24px 70px -36px rgb(21 34 54 / 0.42);
+}
+
+body .omni-meeting-stage [class*="text-white"] {
+  color: #f3f6fb !important;
+}
+
+body .omni-meeting-stage [class*="text-slate-200"],
+body .omni-meeting-stage [class*="text-slate-300"] {
+  color: #c5cfdd !important;
+}
+
+body .omni-meeting-stage [class*="text-slate-400"],
+body .omni-meeting-stage [class*="text-slate-500"] {
+  color: #9ba9bd !important;
+}
+
+body .omni-meeting-stage [class*="border-white/"] {
+  border-color: rgb(255 255 255 / 0.12) !important;
+}
+
+body .omni-meeting-stage [class*="bg-white/"] {
+  background-color: rgb(255 255 255 / 0.06) !important;
+}
+
+body .omni-meeting-stage [class*="bg-black/"] {
+  background-color: rgb(0 0 0 / 0.34) !important;
+}
+
+body .omni-meeting-stage .omni-button-secondary {
+  color: #e5ebf4;
+  border-color: rgb(255 255 255 / 0.14);
+  background: rgb(255 255 255 / 0.06);
+}
+
+body .omni-meeting-stage .omni-button-secondary:hover {
+  border-color: rgb(255 255 255 / 0.24);
+  background: rgb(255 255 255 / 0.11);
 }
 
 .omni-scrollbar::-webkit-scrollbar {

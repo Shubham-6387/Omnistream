@@ -228,7 +228,7 @@ function RoomStage({
   return (
     <LayoutContextProvider value={layoutContext}>
       <div className="grid min-h-[calc(100vh-140px)] gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <section ref={stageRef} className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#0c0f14] shadow-[0_24px_70px_-36px_rgba(0,0,0,0.8)]">
+        <section ref={stageRef} className="omni-meeting-stage relative overflow-hidden rounded-[28px] border border-white/10 bg-[#0c0f14] shadow-[0_24px_70px_-36px_rgba(0,0,0,0.8)]">
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 text-xs text-slate-400">
             <div className="flex items-center gap-2 text-slate-300">
               <span className="h-2 w-2 rounded-full bg-emerald-400" />

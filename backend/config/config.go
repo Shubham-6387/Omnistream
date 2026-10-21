@@ -78,7 +78,7 @@ func Load() (*Config, error) {
 		KafkaBrokers:         splitCSV(getEnv("KAFKA_BROKERS", "localhost:9092")),
 		KafkaTopicFileEvents: getEnv("KAFKA_TOPIC_FILE_EVENTS", "file-events"),
 		KafkaTopicFileReadyEvents: getEnv("KAFKA_TOPIC_FILE_READY_EVENTS", "file-ready-events"),
-		KafkaTopicRecordingReadyEvents: getEnv("KAFKA_TOPIC_RECORDING_READY_EVENTS", "recording-ready-events"),
+		KafkaTopicRecordingReadyEvents: getEnv("KAFKA_TOPIC_RECORDING_READY_EVENTS", "recording.events"),
 	
 		CORSOrigins: splitCSV(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173")),
 		LogLevel:    getEnv("LOG_LEVEL", "info"),

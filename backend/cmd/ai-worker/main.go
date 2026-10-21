@@ -114,7 +114,7 @@ func main() {
 
 	fileService := usecase.NewFileService(fileRepo, filesStorage, 0)
 
-	consumer := kafka.NewConsumer(cfg.KafkaBrokers, "recording-ready-events", "omnistream-ai-worker", logger)
+	consumer := kafka.NewConsumer(cfg.KafkaBrokers, cfg.KafkaTopicRecordingReadyEvents, "omnistream-ai-worker", logger)
 	defer consumer.Close()
 
 	readyProducer := kafka.NewProducer(cfg.KafkaBrokers, cfg.KafkaTopicFileReadyEvents)
@@ -122,8 +122,9 @@ func main() {
 
 	whisperURL := getEnvOrDefault("WHISPER_URL", "http://whisper:9000")
 	ollamaURL := getEnvOrDefault("OLLAMA_URL", "http://ollama:11434")
+	ollamaModel := getEnvOrDefault("OLLAMA_MODEL", "llama3")
 
-	logger.Info("ai-worker started, consuming topic: recording.events")
+	logger.Info("ai-worker started, consuming", "topic", cfg.KafkaTopicRecordingReadyEvents)
 
 	consumer.Consume(ctx, func(ctx context.Context, key, value []byte) error {
 		var event RecordingFinishedEvent
@@ -157,7 +158,7 @@ func main() {
 			event.MeetingType = "corporate"
 		}
 
-		rawJSON, err := generateNotes(ollamaURL, transcript, event.MeetingType)
+		rawJSON, err := generateNotes(ollamaURL, ollamaModel, transcript, event.MeetingType)
 		if err != nil {
 			logger.Error("ollama notes generation failed", "error", err)
 			return err
@@ -254,7 +255,7 @@ func transcribeAudio(whisperURL string, audioData []byte) (string, error) {
 	return result.Text, nil
 }
 
-func generateNotes(ollamaURL, transcript, meetingType string) (string, error) {
+func generateNotes(ollamaURL, ollamaModel, transcript, meetingType string) (string, error) {
 	var systemPrompt string
 	var jsonSchema map[string]any
 
@@ -309,7 +310,7 @@ func generateNotes(ollamaURL, transcript, meetingType string) (string, error) {
 	}
 
 	reqPayload := OllamaRequest{
-		Model:  "llama3",
+		Model:  ollamaModel,
 		Prompt: transcript,
 		System: systemPrompt,
 		Format: jsonSchema,

@@ -20,7 +20,7 @@ services:
       retries: 10
 
   minio:
-    image: minio/minio:latest
+    image: dappros/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: omnistream-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -34,26 +34,23 @@ services:
       - minio_data:/data
     networks:
       - omnistream-net
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
   minio-init:
-    image: minio/mc:latest
+    image: amazon/aws-cli:latest
     container_name: omnistream-minio-init
     depends_on:
-      minio:
-        condition: service_healthy
+      - minio
+    environment:
+      AWS_ACCESS_KEY_ID: omnistream
+      AWS_SECRET_ACCESS_KEY: omnistream_dev_password
+      AWS_DEFAULT_REGION: us-east-1
     networks:
       - omnistream-net
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://minio:9000 omnistream omnistream_dev_password;
-      mc mb --ignore-existing local/omnistream-files;
-      mc mb --ignore-existing local/omnistream-recordings;
-      exit 0;
+      until aws --endpoint-url http://minio:9000 s3api list-buckets >/dev/null 2>&1; do sleep 2; done;
+      aws --endpoint-url http://minio:9000 s3api head-bucket --bucket omnistream-files 2>/dev/null || aws --endpoint-url http://minio:9000 s3api create-bucket --bucket omnistream-files;
+      aws --endpoint-url http://minio:9000 s3api head-bucket --bucket omnistream-recordings 2>/dev/null || aws --endpoint-url http://minio:9000 s3api create-bucket --bucket omnistream-recordings;
       "
 
   kafka:
@@ -89,6 +86,7 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      JAVA_OPTS: "-Xms128m -Xmx512m"
     networks:
       - omnistream-net
   kafka-init:
@@ -128,9 +126,14 @@ services:
     container_name: omnistream-livekit
     restart: unless-stopped
     command: --config /etc/livekit.yaml
-    network_mode: "host"
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "50000-50100:50000-50100/udp"
+    networks:
+      - omnistream-net
     depends_on:
       redis:
         condition: service_healthy
@@ -164,11 +167,12 @@ services:
     image: livekit/egress:latest
     container_name: omnistream-egress
     restart: unless-stopped
-    network_mode: "host"
     environment:
       EGRESS_CONFIG_FILE: /etc/egress.yaml
     volumes:
       - ./egress.yaml:/etc/egress.yaml
+    networks:
+      - omnistream-net
     depends_on:
       livekit:
         condition: service_started
