@@ -26,7 +26,9 @@ export function FileList({ files, roomId, participantId, onDownloaded }: FileLis
 
   return (
     <ul className="space-y-3">
-      {files.map((f) => (
+      {files.map((f) => {
+        const isAiNotes = f.FileName === 'AI_Meeting_Notes.md' || f.FileName === 'AI_Lecture_Notes.md'
+        return (
         <li
           key={f.ID}
           className="flex items-start justify-between gap-4 rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm"
@@ -36,7 +38,10 @@ export function FileList({ files, roomId, participantId, onDownloaded }: FileLis
               <FolderIcon className="h-4 w-4" />
             </div>
             <div className="min-w-0 space-y-1">
-              <p className="truncate font-medium text-white">{f.FileName}</p>
+              <div className="flex items-center gap-2">
+                <p className="truncate font-medium text-white">{f.FileName}</p>
+                {isAiNotes && <Badge tone="success">AI notes</Badge>}
+              </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
                 <span>{formatBytes(f.FileSize)}</span>
                 <span className="h-1 w-1 rounded-full bg-white/30" />
@@ -56,10 +61,11 @@ export function FileList({ files, roomId, participantId, onDownloaded }: FileLis
             onClick={() => setTimeout(onDownloaded, 1500)}
             className="omni-button-secondary shrink-0 px-3 py-2 text-xs"
           >
-            Download
+            {isAiNotes ? 'Download notes' : 'Download'}
           </a>
         </li>
-      ))}
+        )
+      })}
     </ul>
   )
 }

@@ -41,6 +41,8 @@ interface VideoPanelProps {
   onOpenShare: () => void
   copied: boolean
   isRecording: boolean
+  isProcessingNotes: boolean
+  recordingStorageKey: string | null
   onToggleRecording: () => void
 }
 
@@ -107,8 +109,11 @@ export function VideoPanel({
   onOpenShare,
   copied,
   isRecording,
+  isProcessingNotes,
+  recordingStorageKey,
   onToggleRecording,
 }: VideoPanelProps) {
+  const [mediaError, setMediaError] = useState<string | null>(null)
   const layoutContext = useCreateLayoutContext()
   return (
     <LiveKitRoom
@@ -118,6 +123,30 @@ export function VideoPanel({
       video
       audio
       onDisconnected={onDisconnect}
+      onError={(error) => setMediaError(error.message)}
+      onMediaDeviceFailure={(failure, kind) => {
+        const reason = failure === 'PermissionDenied'
+          ? ' Camera/microphone permission is blocked for this site.'
+          : failure === 'NotFound'
+            ? ' No matching device was found.'
+            : failure === 'DeviceInUse'
+              ? ' The device may be in use by another app.'
+              : ''
+        setMediaError(
+          kind === 'videoinput'
+            ? `Camera could not start.${reason} Check browser camera permission and select a camera in the browser/site settings.`
+            : kind === 'audioinput'
+              ? `Microphone could not start.${reason} Check browser microphone permission.`
+              : `A media device could not start.${reason}`,
+        )
+      }}
+      onConnected={() => {
+        if (typeof navigator !== 'undefined' && !navigator.mediaDevices?.getUserMedia) {
+          setMediaError('This browser cannot access camera devices. Open OmniStream in Chrome or Edge and allow camera access for localhost.')
+        } else {
+          setMediaError(null)
+        }
+      }}
       data-lk-theme="default"
       className="relative"
     >
@@ -132,6 +161,9 @@ export function VideoPanel({
         onOpenShare={onOpenShare}
         copied={copied}
         isRecording={isRecording}
+        isProcessingNotes={isProcessingNotes}
+        recordingStorageKey={recordingStorageKey}
+        mediaError={mediaError}
         onToggleRecording={onToggleRecording}
       />
       <RoomAudioRenderer />
@@ -150,6 +182,9 @@ function RoomStage({
   onOpenShare,
   copied,
   isRecording,
+  isProcessingNotes,
+  recordingStorageKey,
+  mediaError,
   onToggleRecording,
 }: {
   layoutContext: ReturnType<typeof useCreateLayoutContext>
@@ -162,6 +197,9 @@ function RoomStage({
   onOpenShare: () => void
   copied: boolean
   isRecording: boolean
+  isProcessingNotes: boolean
+  recordingStorageKey: string | null
+  mediaError: string | null
   onToggleRecording: () => void
 }) {
   const lastAutoFocusedScreenShareTrack = useRef<TrackReferenceOrPlaceholder | null>(null)
@@ -170,7 +208,7 @@ function RoomStage({
       { source: Track.Source.Camera, withPlaceholder: true },
       { source: Track.Source.ScreenShare, withPlaceholder: false },
     ],
-    { updateOnlyOn: [RoomEvent.ActiveSpeakersChanged], onlySubscribed: false },
+    { onlySubscribed: false },
   )
   const focusTrack = usePinnedTracks(layoutContext)?.[0]
   const screenShareTracks = tracks.filter(isTrackReference).filter((track) => track.publication.source === Track.Source.ScreenShare)
@@ -244,6 +282,12 @@ function RoomStage({
             </div>
           </div>
 
+          {mediaError && (
+            <div role="alert" className="border-b border-rose-300/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+              {mediaError}
+            </div>
+          )}
+
           <div className="relative min-h-[calc(100vh-205px)] p-3 sm:p-4">
             <div className="pointer-events-none absolute inset-0 omni-surface-grid opacity-[0.045]" />
             <div className="relative flex h-full min-h-[calc(100vh-205px)] flex-col gap-3">
@@ -283,7 +327,7 @@ function RoomStage({
           </div>
         </section>
 
-        <aside className="flex min-h-0 flex-col gap-4 lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
+        <aside className="omni-room-sidebar flex min-h-0 flex-col gap-4 lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
           <div className="rounded-[24px] border border-white/10 bg-white/[0.02] p-4">
             <div className="flex items-center justify-between gap-3 text-sm text-slate-400">
               <div>{participants.length} participants</div>
@@ -300,9 +344,17 @@ function RoomStage({
               </Button>
               <Button variant={isRecording ? 'danger' : 'secondary'} onClick={onToggleRecording} className="px-3">
                 <RecordingIcon className="h-4 w-4" />
-                {isRecording ? 'Stop' : 'Rec'}
+                {isRecording ? 'Stop recording' : 'Record audio'}
               </Button>
             </div>
+            <p aria-live="polite" className="mt-3 text-xs leading-5 text-slate-400">
+              {isRecording
+                ? 'Recording room audio. Stop to save it and start AI notes.'
+                : isProcessingNotes
+                  ? 'Recording saved. AI notes are being generated and will appear in Files when ready.'
+                  : 'Record audio for AI notes. Notes appear in Files after processing; audio is stored in MinIO.'}
+            </p>
+            {recordingStorageKey && <p className="mt-2 break-all text-xs text-slate-500">MinIO recordings / {recordingStorageKey}</p>}
           </div>
 
           <div className="flex-1 overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.02]">
@@ -316,7 +368,10 @@ function RoomStage({
           </div>
 
           <div className="rounded-[24px] border border-white/10 bg-white/[0.02] p-4">
-            <div className="text-sm text-white">Files</div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm text-white">Files and AI notes</div>
+              {isProcessingNotes && <Badge tone="warning">Notes processing</Badge>}
+            </div>
             <div className="mt-4 space-y-4">
               <DropZone onFilesSelected={onFilesSelected} disabled={uploading} />
               <FileList files={files} roomId={roomId} participantId={localParticipant.identity} onDownloaded={onDownloaded} />

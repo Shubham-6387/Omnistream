@@ -158,16 +158,18 @@ func main() {
 			event.MeetingType = "corporate"
 		}
 
-		rawJSON, err := generateNotes(ollamaURL, ollamaModel, transcript, event.MeetingType)
-		if err != nil {
-			logger.Error("ollama notes generation failed", "error", err)
-			return err
+		rawJSON, generationErr := generateNotes(ollamaURL, ollamaModel, transcript, event.MeetingType)
+		var markdownContent string
+		if generationErr != nil {
+			logger.Error("ollama notes generation failed; saving transcript as notes", "error", generationErr)
+		} else {
+			markdownContent, err = formatMarkdown(rawJSON, event.MeetingType)
+			if err != nil {
+				logger.Error("markdown formatting failed; saving transcript as notes", "error", err)
+			}
 		}
-
-		markdownContent, err := formatMarkdown(rawJSON, event.MeetingType)
-		if err != nil {
-			logger.Error("markdown formatting failed", "error", err)
-			return err
+		if markdownContent == "" {
+			markdownContent = transcriptFallbackMarkdown(transcript, event.MeetingType)
 		}
 
 		fileID := uuid.New().String()
@@ -384,6 +386,23 @@ func formatMarkdown(rawJSON, meetingType string) (string, error) {
 	}
 
 	return sb.String(), nil
+}
+
+func transcriptFallbackMarkdown(transcript, meetingType string) string {
+	var sb strings.Builder
+	if meetingType == "lecture" {
+		sb.WriteString("# Lecture Transcript Notes\n\n")
+	} else {
+		sb.WriteString("# Meeting Transcript Notes\n\n")
+	}
+	sb.WriteString("AI could not format a summary for this recording, so the transcribed speech is included below.\n\n")
+	sb.WriteString("## Transcript\n\n")
+	if strings.TrimSpace(transcript) == "" {
+		sb.WriteString("No speech was detected in this recording. Check that participants' microphones were on and try recording again.\n")
+	} else {
+		sb.WriteString(strings.TrimSpace(transcript) + "\n")
+	}
+	return sb.String()
 }
 
 func getEnvOrDefault(key, defaultValue string) string {

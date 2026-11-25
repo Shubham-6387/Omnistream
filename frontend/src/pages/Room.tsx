@@ -84,12 +84,17 @@ export function Room() {
   const [videoToken, setVideoToken] = useState<string | null>(null)
   const [livekitUrl, setLivekitUrl] = useState<string | null>(null)
   const [isRecording, setIsRecording] = useState(false)
+  const [isProcessingNotes, setIsProcessingNotes] = useState(false)
+  const [recordingStorageKey, setRecordingStorageKey] = useState<string | null>(null)
   const [toast, setToast] = useState<ToastState | null>(null)
 
   const refreshFiles = useCallback(async () => {
     try {
       const list = await listWaitingFiles(roomId, participantId)
       setFiles(list)
+      if (list.some((file) => (file.FileName === 'AI_Meeting_Notes.md' || file.FileName === 'AI_Lecture_Notes.md') && file.Status === 'ready')) {
+        setIsProcessingNotes(false)
+      }
     } catch (err) {
       console.error('Failed to refresh file list:', err)
     }
@@ -148,19 +153,34 @@ export function Room() {
   }, [roomId, participantId, refreshFiles])
 
   useEffect(() => {
+    if (!isProcessingNotes) return
+    const interval = window.setInterval(() => void refreshFiles(), 4000)
+    return () => window.clearInterval(interval)
+  }, [isProcessingNotes, refreshFiles])
+
+  useEffect(() => {
     if (!toast) return
     const timeout = window.setTimeout(() => setToast(null), 2600)
     return () => window.clearTimeout(timeout)
   }, [toast])
 
   const handleFileReady = useCallback(
-    (_payload: FileReadyPayload) => {
+    (payload: FileReadyPayload) => {
       refreshFiles()
-      setToast({
-        title: 'File ready',
-        description: 'A room file finished processing and is available for download.',
-        tone: 'success',
-      })
+      if (payload.file_name === 'AI_Meeting_Notes.md' || payload.file_name === 'AI_Lecture_Notes.md') {
+        setIsProcessingNotes(false)
+        setToast({
+          title: 'AI notes ready',
+          description: 'Download the notes from the Files panel.',
+          tone: 'success',
+        })
+      } else {
+        setToast({
+          title: 'File ready',
+          description: 'A room file finished processing and is available for download.',
+          tone: 'success',
+        })
+      }
     },
     [refreshFiles],
   )
@@ -238,28 +258,29 @@ export function Room() {
   }
 
   const toggleRecording = async () => {
-    const nextRecordingState = !isRecording
-    setIsRecording(nextRecordingState)
-
     try {
-      if (nextRecordingState) {
-        await startRecording(roomId)
+      if (!isRecording) {
+        const result = await startRecording(roomId)
+        setIsRecording(true)
+        setIsProcessingNotes(false)
+        setRecordingStorageKey(typeof result?.storage_key === 'string' ? result.storage_key : null)
         setToast({
           title: 'Recording started',
-          description: 'The room is now sending recording commands to the backend.',
+          description: 'Room audio is being recorded. Stop the recording to start AI notes.',
           tone: 'success',
         })
       } else {
         await stopRecording(roomId)
+        setIsRecording(false)
+        setIsProcessingNotes(true)
         setToast({
           title: 'Recording stopped',
-          description: 'Recording has been stopped for this room.',
+          description: 'Audio is saved. AI notes will appear in the Files panel when ready.',
           tone: 'neutral',
         })
       }
     } catch (err) {
       console.error('Failed to toggle recording state', err)
-      setIsRecording((prev) => !prev)
       setToast({
         title: 'Recording update failed',
         description: 'The backend rejected the recording request.',
@@ -292,7 +313,7 @@ export function Room() {
   }
 
   return (
-    <main className="omni-shell space-y-5 pb-8">
+    <main className="omni-shell omni-room-shell space-y-5 pb-8">
       <header className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/[0.03] px-4 py-4 backdrop-blur-xl sm:px-5 lg:flex-row lg:items-center lg:justify-between">
         <Link to="/" className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-cyan-400/15 text-cyan-300">
@@ -321,11 +342,11 @@ export function Room() {
       {!videoToken ? (
         <section className="mx-auto w-full max-w-6xl">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)]">
-            <div className="rounded-[28px] border border-white/10 bg-[#0e1012] p-6 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.8)]">
+            <div className="omni-room-light-card rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_-36px_rgba(30,41,59,0.18)]">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h1 className="text-3xl font-semibold tracking-tight text-white">Room files</h1>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">Upload what you need here. Join the meeting whenever you’re ready.</p>
+                  <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Room files</h1>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Upload what you need here. Join the meeting whenever you’re ready.</p>
                 </div>
                 <Badge tone={files.length ? 'success' : 'neutral'}>{files.length} file{files.length === 1 ? '' : 's'}</Badge>
               </div>
@@ -343,9 +364,9 @@ export function Room() {
               )}
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-[#0e1012] p-6 shadow-[0_24px_70px_-36px_rgba(0,0,0,0.8)]">
-              <h2 className="text-2xl font-semibold tracking-tight text-white">Join the meet</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-400">Video is optional. Upload files first and start the call when needed.</p>
+            <div className="omni-room-light-card rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_-36px_rgba(30,41,59,0.18)]">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Join the meet</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Video is optional. Upload files first and start the call when needed.</p>
 
               {!showJoinMeetPrompt ? (
                 <div className="mt-6 space-y-3">
@@ -360,7 +381,7 @@ export function Room() {
                 </div>
               ) : (
                 <div className="mt-6 space-y-4">
-                  <label className="block text-sm font-medium text-slate-200" htmlFor="display-name">
+                  <label className="block text-sm font-medium text-slate-700" htmlFor="display-name">
                     Display name
                   </label>
                   <Input
@@ -379,7 +400,7 @@ export function Room() {
                   <button
                     type="button"
                     onClick={() => setShowJoinMeetPrompt(false)}
-                    className="text-sm text-slate-400 transition hover:text-white"
+                    className="text-sm text-slate-600 transition hover:text-slate-900"
                   >
                     Cancel
                   </button>
@@ -407,6 +428,8 @@ export function Room() {
           onOpenShare={() => setShowQR(true)}
           copied={copied}
           isRecording={isRecording}
+          isProcessingNotes={isProcessingNotes}
+          recordingStorageKey={recordingStorageKey}
           onToggleRecording={toggleRecording}
         />
       )}

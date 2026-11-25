@@ -130,7 +130,7 @@ export function Home() {
   }
 
   return (
-    <main className="omni-shell space-y-16 pb-12">
+    <main className="omni-shell omni-home space-y-16 pb-12">
       <header className="flex items-center justify-between gap-4 py-2">
         <Logo />
 

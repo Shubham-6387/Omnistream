@@ -264,69 +264,69 @@
 
 /* The app chrome uses a soft slate and paper palette. The video stage stays
    dark so camera feeds remain legible and visually distinct from the UI. */
-body [class*="text-white"] {
+body .omni-home [class*="text-white"] {
   color: #1f2b3d !important;
 }
 
-body [class*="text-slate-200"],
-body [class*="text-slate-300"] {
+body .omni-home [class*="text-slate-200"],
+body .omni-home [class*="text-slate-300"] {
   color: #495a72 !important;
 }
 
-body [class*="text-slate-400"],
-body [class*="text-slate-500"] {
+body .omni-home [class*="text-slate-400"],
+body .omni-home [class*="text-slate-500"] {
   color: #68788f !important;
 }
 
-body [class*="border-white/"] {
+body .omni-home [class*="border-white/"] {
   border-color: #dfe5ee !important;
 }
 
-body [class*="bg-white/"] {
+body .omni-home [class*="bg-white/"] {
   background-color: rgb(62 84 117 / 0.045) !important;
 }
 
-body [class*="bg-white/[0.02]"] {
+body .omni-home [class*="bg-white/[0.02]"] {
   background-color: rgb(62 84 117 / 0.035) !important;
 }
 
-body [class*="bg-white/[0.03]"] {
+body .omni-home [class*="bg-white/[0.03]"] {
   background-color: rgb(62 84 117 / 0.06) !important;
 }
 
-body [class*="bg-white/[0.04]"] {
+body .omni-home [class*="bg-white/[0.04]"] {
   background-color: rgb(62 84 117 / 0.075) !important;
 }
 
-body [class*="bg-black/"] {
+body .omni-home [class*="bg-black/"] {
   background-color: rgb(37 52 74 / 0.055) !important;
 }
 
-body [class*="bg-[#0e1012]"] {
+body .omni-home [class*="bg-[#0e1012]"] {
   background-color: #fff !important;
 }
 
-body .omni-shell [class*="bg-[linear-gradient"] {
+body .omni-home [class*="bg-[linear-gradient"] {
   background-image: linear-gradient(145deg, #f1f4f8, #e7ecf3) !important;
 }
 
-body .omni-shell [class*="bg-black/25"] {
+body .omni-home [class*="bg-black/25"] {
   background-color: rgb(43 60 84 / 0.055) !important;
 }
 
-body .omni-shell [class*="bg-black/40"] {
+body .omni-home [class*="bg-black/40"] {
   background-color: rgb(43 60 84 / 0.095) !important;
 }
 
-body .omni-shell [class*="bg-black/50"] {
+body .omni-home [class*="bg-black/50"] {
   background-color: rgb(43 60 84 / 0.16) !important;
 }
 
-body [class*="text-cyan-"] {
+body .omni-home [class*="text-cyan-"] {
   color: #506d9b !important;
 }
 
-body [class*="bg-cyan-"] {
+body .omni-home [class*="bg-cyan-"] {
   background-color: #e9eff8 !important;
 }
 
@@ -372,6 +372,101 @@ body .omni-meeting-stage .omni-button-secondary {
 body .omni-meeting-stage .omni-button-secondary:hover {
   border-color: rgb(255 255 255 / 0.24);
   background: rgb(255 255 255 / 0.11);
+}
+
+body:has(.omni-room-shell) {
+  color: #1f2b3d;
+  background: #f4f6fa;
+}
+
+.omni-room-shell {
+  min-height: 100vh;
+  color: #1f2b3d;
+}
+
+.omni-room-shell > header {
+  border-color: #dfe5ee;
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: 0 18px 48px -30px rgb(30 41 59 / 0.18);
+}
+
+.omni-room-shell > header [class*="text-white"] {
+  color: #1f2b3d !important;
+}
+
+.omni-room-sidebar [class*="text-white"] {
+  color: #1f2b3d !important;
+}
+
+.omni-room-sidebar [class*="text-slate-200"],
+.omni-room-sidebar [class*="text-slate-300"] {
+  color: #495a72 !important;
+}
+
+.omni-room-sidebar [class*="text-slate-400"],
+.omni-room-sidebar [class*="text-slate-500"] {
+  color: #68788f !important;
+}
+
+.omni-room-sidebar [class*="border-white/"] {
+  border-color: #dfe5ee !important;
+}
+
+.omni-room-sidebar [class*="bg-white/"] {
+  background-color: rgb(62 84 117 / 0.045) !important;
+}
+
+.omni-room-sidebar [class*="bg-black/"] {
+  background-color: rgb(62 84 117 / 0.055) !important;
+}
+
+.omni-room-sidebar [class*="text-cyan-"] {
+  color: #506d9b !important;
+}
+
+.omni-room-sidebar [class*="bg-cyan-"] {
+  background-color: #e9eff8 !important;
+}
+
+.omni-room-light-card [class*="text-white"] {
+  color: #1f2b3d !important;
+}
+
+.omni-room-light-card [class*="text-slate-200"],
+.omni-room-light-card [class*="text-slate-300"] {
+  color: #495a72 !important;
+}
+
+.omni-room-light-card [class*="text-slate-400"],
+.omni-room-light-card [class*="text-slate-500"] {
+  color: #68788f !important;
+}
+
+.omni-room-light-card [class*="border-white/"] {
+  border-color: #dfe5ee !important;
+}
+
+.omni-room-light-card [class*="bg-white/"] {
+  background-color: rgb(62 84 117 / 0.045) !important;
+}
+
+.omni-room-light-card [class*="text-cyan-"] {
+  color: #506d9b !important;
+}
+
+.omni-room-light-card [class*="bg-cyan-"] {
+  background-color: #e9eff8 !important;
+}
+
+.omni-room-sidebar .omni-button-secondary {
+  color: #34445c;
+  border-color: #d8e0eb;
+  background: #fff;
+}
+
+.omni-room-sidebar .omni-button-secondary:hover {
+  background: #f0f3f8;
+  border-color: #c5d0df;
 }
 
 .omni-scrollbar::-webkit-scrollbar {
